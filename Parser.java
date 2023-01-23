@@ -23,6 +23,7 @@ public class Parser {
 			throw new StringIndexOutOfBoundsException("No input left to read");
 		}
 		consumeWhitespace(); // strip leading whitespace
+		consumeProlog();
 		consumeComment();
 		if (currChar() == '<' && nextChar() == '/') { // detect closing tag
 			return readClosingTag();
@@ -116,6 +117,16 @@ public class Parser {
 	private void consumeWhitespace() {
 		while (Character.isWhitespace(currChar())) {
 			currInputIdx++;
+		}
+	}
+	
+	private void consumeProlog() {
+		if (currChar() == '<' && nextChar() == '?') { // detect prolog opening
+			currInputIdx += 2; // consume "<?"
+			while (currChar() != '?' || nextChar() != '>') {
+				currInputIdx++;
+			}
+			currInputIdx += 2; // consume "?>"
 		}
 	}
 	

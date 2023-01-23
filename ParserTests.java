@@ -207,6 +207,18 @@ public class ParserTests {
 		assertEquals(sut.getPath(), "/order");
 	}
 	
+	@Test
+	public void read_one_element_with_xml_prolog() {
+		input = "<?xml version=\"1.0\" standalone=\"yes\"?><root></root>";
+		sut = new Parser(input);
+		
+		sut.readNext();
+		Element expected = new Element("root");
+		
+		assertEquals(getTopName(), expected.getName());
+		assertEquals(sut.getPath(), "/root");
+	}
+	
 	private String getTopName() {
 		return sut.getCurrentElement().getName();
 	}

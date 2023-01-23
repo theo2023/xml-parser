@@ -22,8 +22,7 @@ public class Runner {
 				break;
 			}
 			
-			if (/*(nextInputType == Parser.NextInputType.ELEMENT || nextInputType == Parser.NextInputType.DATA)
-					&&*/ !parser.getCurrentAttributes().isEmpty()) {
+			if (!parser.getCurrentAttributes().isEmpty()) {
 				System.out.println("\nCurrent path: " + parser.getPath());
 				System.out.print("This element has attribute(s). Press r to read or s to skip. ");
 				readOrSkipDetails(scan.next().charAt(0), false, currElt);
