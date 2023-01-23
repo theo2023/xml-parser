@@ -25,6 +25,7 @@ public class Parser {
 		consumeWhitespace(); // strip leading whitespace
 		consumeProlog();
 		consumeComment();
+		consumeWhitespace();
 		if (currChar() == '<' && nextChar() == '/') { // detect closing tag
 			return readClosingTag();
 		} else if (currChar() == '<' && nextChar() != '!') { // detect element
@@ -37,7 +38,7 @@ public class Parser {
 		currInputIdx++; // consume '<'
 
 		String name = "";
-		while (currChar() != '>' && currChar() != ' ') { // consume element name
+		while (currChar() != '>' && currChar() != ' ' && currChar() != '/') { // consume element name
 			name += currChar();
 			currInputIdx++;
 		}
@@ -45,10 +46,14 @@ public class Parser {
 		consumeWhitespace();
 		Element newElt = new Element(name);
 
-		if (currChar() != '>') {
+		if (currChar() != '>' && currChar() != '/') {
 			readAttributesList(newElt);
 		}
-		currInputIdx++; // consume '>'
+		
+		if (currChar() == '>') {
+			currInputIdx++; // consume '>'
+		}
+		
 		consumeComment();
 
 		stack.push(newElt);
@@ -58,7 +63,8 @@ public class Parser {
 		if (currChar() == '<' && nextChar() != '/' && nextChar() != '!') { // detect child element
 			consumeWhitespace();
 			return NextInputType.ELEMENT;
-		} else if (currChar() == '<' && nextChar() == '/') { // detect closing tag
+		} else if ((currChar() == '<' && nextChar() == '/')
+					|| (currChar() == '/' && nextChar() == '>')) { // detect closing tag
 			consumeWhitespace();
 			return NextInputType.CLOSING_TAG;
 		}
@@ -71,10 +77,15 @@ public class Parser {
 	private NextInputType readClosingTag() {
 		stack.pop();
 		path.remove(path.size() - 1);
-
-		while (currChar() != '>') { 
-			currInputIdx++;
-		}
+		
+//		if (currChar() == '/') { // detect alternate closing tag
+//			currInputIdx++; // consume '/'
+//		} else {
+			// normal closing tag, consume element name
+			while (currChar() != '>') { 
+				currInputIdx++;
+			}
+//		}
 		currInputIdx++; // consume '>'
 		return NextInputType.CLOSING_TAG;
 	}
@@ -91,7 +102,7 @@ public class Parser {
 	}
 	
 	private void readAttributesList(Element elt) {
-		while (currChar() != '>') {
+		while (currChar() != '>' && currChar() != '/') {
 			String key = "";
 			while (currChar() != '=') { // consume attribute name
 				key += currChar();
