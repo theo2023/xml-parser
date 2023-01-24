@@ -5,14 +5,14 @@ import java.util.Map;
 
 public class Parser {
 	
-	private StringBuilder input;
+	private String input;
 	private int currInputIdx;
 	private Stack<Element> stack;
 	private List<String> path;
-	static enum NextInputType { ELEMENT, DATA, CLOSING_TAG };
+	static enum NextInputType { ELEMENT, DATA, CLOSING_TAG, ALT_CLOSING };
 	
 	public Parser(String input) {
-		this.input = new StringBuilder(input);
+		this.input = input;
 		this.currInputIdx = 0;
 		this.stack = new Stack<Element>();
 		this.path = new ArrayList<String>();
@@ -22,10 +22,15 @@ public class Parser {
 		if (currInputIdx >= input.length()) {
 			throw new StringIndexOutOfBoundsException("No input left to read");
 		}
+		
+		if (currChar() == '<' && nextChar() == '?') { // detect prolog, only appears at beginning of file
+			consumeProlog();
+		}
+		
 		consumeWhitespace(); // strip leading whitespace
-		consumeProlog();
 		consumeComment();
 		consumeWhitespace();
+		
 		if (currChar() == '<' && nextChar() == '/') { // detect closing tag
 			return readClosingTag();
 		} else if (currChar() == '<' && nextChar() != '!') { // detect element
@@ -52,19 +57,23 @@ public class Parser {
 		
 		if (currChar() == '>') {
 			currInputIdx++; // consume '>'
+			// only push if there will be a separate closing tag, not within the opening tag
+			stack.push(newElt);
+			path.add(name);
+		}
+		
+		if (currChar() == '/' && nextChar() == '>') {
+			currInputIdx += 2; // consume "/>"
+			return NextInputType.ALT_CLOSING;
 		}
 		
 		consumeComment();
-
-		stack.push(newElt);
-		path.add(name);
-
 		consumeWhitespace();
+		
 		if (currChar() == '<' && nextChar() != '/' && nextChar() != '!') { // detect child element
 			consumeWhitespace();
 			return NextInputType.ELEMENT;
-		} else if ((currChar() == '<' && nextChar() == '/')
-					|| (currChar() == '/' && nextChar() == '>')) { // detect closing tag
+		} else if (currChar() == '<' && nextChar() == '/') { // detect closing tag
 			consumeWhitespace();
 			return NextInputType.CLOSING_TAG;
 		}
@@ -92,10 +101,14 @@ public class Parser {
 	
 	private void readData(Element elt) {
 		String data = "";
-		while (currChar() != '<' || nextChar() != '/') { // consume data
-			detectAndReplaceEscapedChars();
-			data += currChar();
-			currInputIdx++;
+		while (currChar() != '<') { // consume data
+			String replaced = detectAndReplaceEscapedChars();
+			data += replaced;
+			
+			if (replaced.equals("")) {
+				data += currChar();
+				currInputIdx++;
+			}
 		}
 		data = data.stripTrailing();
 		elt.setData(data);
@@ -115,9 +128,13 @@ public class Parser {
 			
 			String value = "";
 			while (currChar() != '"') { // consume attribute value
-				detectAndReplaceEscapedChars();
-				value += currChar();
-				currInputIdx++;
+				String replaced = detectAndReplaceEscapedChars();
+				value += replaced;
+				
+				if (replaced.equals("")) {
+					value += currChar();
+					currInputIdx++;
+				}
 			}
 			currInputIdx++; // consume '"'
 			elt.addAttribute(key, value);
@@ -132,13 +149,11 @@ public class Parser {
 	}
 	
 	private void consumeProlog() {
-		if (currChar() == '<' && nextChar() == '?') { // detect prolog opening
-			currInputIdx += 2; // consume "<?"
-			while (currChar() != '?' || nextChar() != '>') {
-				currInputIdx++;
-			}
-			currInputIdx += 2; // consume "?>"
+		currInputIdx += 2; // consume "<?"
+		while (currChar() != '?' || nextChar() != '>') {
+			currInputIdx++;
 		}
+		currInputIdx += 2; // consume "?>"
 	}
 	
 	private void consumeComment() {
@@ -154,11 +169,11 @@ public class Parser {
 		}
 	}
 	
-	private void detectAndReplaceEscapedChars() {
-		int origIdx = currInputIdx;
+	// this method needs to return the consumed characters to avoid parsing '<' as the beginning of a new element
+	private String detectAndReplaceEscapedChars() {
+		String replaced = "";
 		while (currChar() == '&' && (nextChar() == 'a' || nextChar() == 'l'
 			   || nextChar() == 'g' || nextChar() == 'q')) { // detect escaped entity
-			int replacementIdx = input.indexOf("&", currInputIdx);
 			currInputIdx++; // consume '&'
 			
 			String escapedName = "";
@@ -169,27 +184,30 @@ public class Parser {
 			
 			switch (escapedName) {
 				case "amp":
-					input.replace(replacementIdx, currInputIdx + 1, "&");
+					replaced += '&';
 					break;
 				case "lt":
-					input.replace(replacementIdx, currInputIdx + 1, "<");
+					replaced += '<';
 					break;
 				case "gt":
-					input.replace(replacementIdx, currInputIdx + 1, ">");
+					replaced += '>';
 					break;
 				case "quot":
-					input.replace(replacementIdx, currInputIdx + 1, "\"");
+					replaced += '"';
 					break;
 				case "apos":
-					input.replace(replacementIdx, currInputIdx + 1, "'");
+					replaced += '\'';
 					break;
 			}
-			currInputIdx -= escapedName.length();
+			currInputIdx++; // consume ';'
 		}
-		currInputIdx = origIdx; // to make it easier to read data
+		return replaced;
 	}
 	
 	private char currChar() {
+		if (currInputIdx >= input.length()) {
+			throw new StringIndexOutOfBoundsException("Tried to access character beyond input string length");
+		}
 		return input.charAt(currInputIdx);
 	}
 	
