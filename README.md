@@ -1,5 +1,13 @@
 # XML Parser
 
+## Updates (1/24/23)
+
+- Added the ability to parse the XML prolog if present
+- Rewrote parsing of XML escaped entities in a forward-only manner
+- Added the ability to parse elements of this form: `<example/>`. However, as it stands, there is no way for the user of the interactive parser to access attributes that are within such an element. This is because the stack must be peeked to retrieve the current element, and it didn't make sense from a design standpoint to push such an element onto the stack only to immediately pop it, or to embed print statements within my `Parser` class. I didn't want to spend the time completely overhauling my parser design to accommodate interactivity for elements closed by `/>`.
+- Added the ability to parse elements whose data is interrupted by intermediary elements. Unfortunately, the separated data is concatenated to the previously read data, meaning any whitespace is skipped so that previous tests don't fail. For example, after `<example>say <emph>hello </emph>world </example>` is parsed, the `example` element's data is `sayworld` rather than `say world`.
+- Additional time spent: roughly 7 hours (mostly testing and debugging)
+
 I began by researching XML syntax and learning the differences between elements and attributes because I knew I would have to model them in my code. An [online XML validator](https://codebeautify.org/xmlvalidator) and [viewer](https://codebeautify.org/xmlviewer) proved extremely useful for seeing which inputs were valid/invalid (since I was new to working with XML) and for helping me come up with edge cases to eventually test. It made sense to model an element as its own class with its name, attributes as a hash map (so that I could associate the attribute name with its value), and data as fields. From my experimentation with which XML was valid, I noticed that attributes "belonged" to elements and couldn't exist by themselves, which is why I modeled them as a field instead of another class.
 
 ## Brainstorming and Initial Approaches
@@ -9,12 +17,12 @@ My brainstorming included thinking about how I would process each part of the in
 ## Interactivity
 
 I proceeded with developing a working prototype through TDD, keeping in mind all the different locations whitespace can appear in XML (this influenced how I wrote my early tests) along the way. It made the most sense to me to complete the parsing of an element every time I popped the stack, so that's what I did. Also, since the specifications stated that information about the current element or attribute had to be output/accessible, I decided to make the parser interactive. Otherwise, I thought it would be difficult for the user to retrieve the desired data if the entire input was parsed at once.
-In the spirit of separation of concerns, I wanted to keep the interactive logic/print statements in the Runner class separate from the Parser class as much as possible. I figured the Parser class shouldn't need to know anything about how it's being used in the Runner class.
+In the spirit of separation of concerns, I wanted to keep the interactive logic/print statements in the `Runner` class separate from the `Parser` class as much as possible. I figured the `Parser` class shouldn't need to know anything about how it's being used in the `Runner` class.
 
 ## Assumptions
 - The input is a single string containing valid XML
 - The input string is one continuous line (due to running into problems with the reading of whitespace escape sequences)
-- How I implemented parsing the XML escaped entities does not explicitly violate the forward-only requirement
+- ~~How I implemented parsing the XML escaped entities does not explicitly violate the forward-only requirement~~
 
 ## Final Reflections 
 
