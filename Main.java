@@ -1,6 +1,4 @@
 import java.util.EmptyStackException;
-import java.util.Map;
-import java.util.HashMap;
 import java.io.*;
 
 public class Main {
