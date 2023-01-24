@@ -47,11 +47,17 @@ public class Main {
 		} catch (Exception e) {
 			System.out.println("Could not create string from XML file");
 		}
+		
 		Parser parser = new Parser(input);
-		// TODO
 		while (parser.getCurrInputIdx() < input.length()) {
 			parser.readNext();
-			System.out.println(parser.getCurrentElement().getName());
+			Element currElt = null;
+			try {
+				currElt = parser.getCurrentElement();
+			} catch (EmptyStackException e) {
+				break;
+			}
+			System.out.println(currElt.getName());
 		}
 	}
 }

@@ -10,7 +10,7 @@ public class Element {
 	public Element(String name) {
 		this.name = name;
 		this.attributes = new HashMap<String, String>();
-		this.data = null;
+		this.data = "";
 	}
 	
 	public String getName() {
@@ -25,8 +25,8 @@ public class Element {
 		return this.data;
 	}
 	
-	public void setData(String data) {
-		this.data = data;
+	public void appendToData(String data) {
+		this.data += data;
 	}
 	
 	public String addAttribute(String key, String value) {

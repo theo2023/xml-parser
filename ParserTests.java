@@ -41,7 +41,7 @@ public class ParserTests {
 		
 		sut.readNext();
 		Element expected = new Element("name");
-		expected.setData("Theo Steiner");
+		expected.appendToData("Theo Steiner");
 		
 		assertEquals(getTopName(), expected.getName());
 		assertEquals(getTopAttributesString(), expected.getAttributes().toString());
@@ -82,7 +82,7 @@ public class ParserTests {
 		
 		sut.readNext();
 		expected = new Element("name");
-		expected.setData("Theo Steiner");
+		expected.appendToData("Theo Steiner");
 		
 		assertEquals(getTopName(), expected.getName());
 		assertEquals(getTopAttributesString(), expected.getAttributes().toString());
@@ -130,7 +130,7 @@ public class ParserTests {
 		
 		sut.readNext();
 		expected = new Element("name");
-		expected.setData("Theo Steiner");
+		expected.appendToData("Theo Steiner");
 		
 		assertEquals(getTopName(), expected.getName());
 		assertEquals(getTopAttributesString(), expected.getAttributes().toString());
@@ -158,7 +158,7 @@ public class ParserTests {
 		
 		sut.readNext();
 		Element expected = new Element("root");
-		expected.setData("&");
+		expected.appendToData("&");
 		
 		assertEquals(getTopName(), expected.getName());
 		assertEquals(getTopData(), expected.getData());
@@ -172,7 +172,7 @@ public class ParserTests {
 		
 		sut.readNext();
 		Element expected = new Element("root");
-		expected.setData("&<>\"'");
+		expected.appendToData("&<>\"'");
 		
 		assertEquals(getTopName(), expected.getName());
 		assertEquals(getTopData(), expected.getData());
@@ -266,28 +266,94 @@ public class ParserTests {
 		
 		sut.readNext();
 		Element expected = new Element("text");
-		expected.setData("Theo");
+		expected.appendToData("Theo");
 		
 		assertEquals(getTopName(), expected.getName());
 		assertEquals(getTopData(), expected.getData());
-		assertEquals(getTopAttributesString(), expected.getAttributes().toString());
 		assertEquals(sut.getPath(), "/text");
 		
 		sut.readNext();
 		expected = new Element("emph");
-		expected.setData("Steiner");
+		expected.appendToData("Steiner");
 		
 		assertEquals(getTopName(), expected.getName());
 		assertEquals(getTopData(), expected.getData());
-		assertEquals(getTopAttributesString(), expected.getAttributes().toString());
 		assertEquals(sut.getPath(), "/text/emph");
 		
 		sut.readNext();
 		expected = new Element("text");
+		expected.appendToData("Theo");
 		
 		assertEquals(getTopName(), expected.getName());
 		assertEquals(getTopData(), expected.getData());
-		assertEquals(getTopAttributesString(), expected.getAttributes().toString());
+		assertEquals(sut.getPath(), "/text");
+		
+		sut.readNext();
+		
+		assertFalse(sut.hasCurrentElement());
+		assertEquals(sut.getPath(), "/");
+		assertEquals(sut.getCurrInputIdx(), input.length());
+	}
+	
+	@Test
+	public void read_multiple_elements_with_data_scattered() {
+		input = "<text>hello <keyword> world </keyword> what<emph> in </emph> the</text>";
+		sut = new Parser(input);
+		
+		sut.readNext();
+		Element expected = new Element("text");
+		expected.appendToData("hello");
+		
+		assertEquals(getTopName(), expected.getName());
+		assertEquals(getTopData(), expected.getData());
+		assertEquals(sut.getPath(), "/text");
+		
+		sut.readNext();
+		expected = new Element("keyword");
+		expected.appendToData("world");
+		
+		assertEquals(getTopName(), expected.getName());
+		assertEquals(getTopData(), expected.getData());
+		assertEquals(sut.getPath(), "/text/keyword");
+		
+		sut.readNext();
+		expected = new Element("text");
+		expected.appendToData("hello");
+		
+		assertEquals(getTopName(), expected.getName());
+		assertEquals(getTopData(), expected.getData());
+		assertEquals(sut.getPath(), "/text");
+		
+		sut.readNext();
+		expected = new Element("text");
+		expected.appendToData("hellowhat");
+		
+		assertEquals(getTopName(), expected.getName());
+		assertEquals(getTopData(), expected.getData());
+		assertEquals(sut.getPath(), "/text");
+		
+		sut.readNext();
+		expected = new Element("emph");
+		expected.appendToData("in");
+		
+		assertEquals(getTopName(), expected.getName());
+		assertEquals(getTopData(), expected.getData());
+		assertEquals(sut.getPath(), "/text/emph");
+		
+		sut.readNext();
+		expected = new Element("text");
+		expected.appendToData("hellowhat");
+		
+		assertEquals(getTopName(), expected.getName());
+		assertEquals(getTopData(), expected.getData());
+		assertEquals(sut.getPath(), "/text");
+		
+		sut.readNext();
+		expected = new Element("text");
+		expected.appendToData("hellowhatthe");
+		
+		assertEquals(getTopName(), expected.getName());
+		assertEquals(getTopData(), expected.getData());
 		assertEquals(sut.getPath(), "/text");
 		
 		sut.readNext();

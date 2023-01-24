@@ -26,7 +26,7 @@ public class Example {
 			if (!currElt.getAttributes().isEmpty()) {
 				id = currElt.getAttributes().get("id");
 			}
-			if (currElt.getData() != null) {
+			if (!currElt.getData().equals("")) {
 				amount = Integer.parseInt(currElt.getData());
 			}
 			

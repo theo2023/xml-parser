@@ -43,7 +43,7 @@ public class Runner {
 					System.out.print("\nContinue parsing? (y) ");
 					command = scan.next().charAt(0);
 					break;
-				case CLOSING_TAG:
+				default: // CLOSING_TAG or ALT_CLOSING
 					System.out.print("Element fully parsed. Continue parsing? (y) ");
 					command = scan.next().charAt(0);
 					break;

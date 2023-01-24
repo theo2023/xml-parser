@@ -1,5 +1,6 @@
 import java.util.List;
 import java.util.ArrayList;
+import java.util.EmptyStackException;
 import java.util.Stack;
 import java.util.Map;
 
@@ -36,7 +37,8 @@ public class Parser {
 		} else if (currChar() == '<' && nextChar() != '!') { // detect element
 			return readNextElement();
 		}
-		return null;
+		// else, in between tags there is data belonging to the current element
+		return readData(getCurrentElement());
 	}
 	
 	private NextInputType readNextElement() {
@@ -78,28 +80,21 @@ public class Parser {
 			return NextInputType.CLOSING_TAG;
 		}
 		// read data and update element
-		readData(newElt);
-		consumeWhitespace();
-		return NextInputType.DATA;
+		return readData(newElt);
 	}
 	
 	private NextInputType readClosingTag() {
 		stack.pop();
 		path.remove(path.size() - 1);
 		
-//		if (currChar() == '/') { // detect alternate closing tag
-//			currInputIdx++; // consume '/'
-//		} else {
-			// normal closing tag, consume element name
-			while (currChar() != '>') { 
-				currInputIdx++;
-			}
-//		}
+		while (currChar() != '>') {
+			currInputIdx++;
+		}
 		currInputIdx++; // consume '>'
 		return NextInputType.CLOSING_TAG;
 	}
 	
-	private void readData(Element elt) {
+	private NextInputType readData(Element elt) {
 		String data = "";
 		while (currChar() != '<') { // consume data
 			String replaced = detectAndReplaceEscapedChars();
@@ -111,7 +106,8 @@ public class Parser {
 			}
 		}
 		data = data.stripTrailing();
-		elt.setData(data);
+		elt.appendToData(data);
+		return NextInputType.DATA;
 	}
 	
 	private void readAttributesList(Element elt) {
@@ -227,6 +223,9 @@ public class Parser {
 	}
 	
 	public Element getCurrentElement() {
+		if (!hasCurrentElement()) {
+			throw new EmptyStackException();
+		}
 		return this.stack.peek();
 	}
 	
